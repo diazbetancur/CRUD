@@ -5,11 +5,30 @@ import shortId from 'shortid'
 function App() {
   const [task, setTask] = useState("")
   const [tasks, setTasks] = useState([])
+  const [editMode, seEditMode] = useState(false)
+  const [id, setId] = useState("")
+  const [error, setError] = useState(null)
 
+  const editTask = (theTask) => {
+    setTask(theTask.name)
+    seEditMode(true)
+    setId(theTask.id)
+
+  }
+
+  const validForm = () => {
+    let isValid = true;
+    setError(null)
+    if (isEmpty(task)) {
+      setError("Debes ingresar una tarea")
+      isValid = false
+    }
+    return isValid
+  }
   const addTask = (e) => {
     e.preventDefault()
-    if (isEmpty(task)) {
-      console.log("Task empty")
+
+    if (!validForm()) {
       return
     }
 
@@ -20,6 +39,20 @@ function App() {
     }
 
     setTasks([...tasks, newTask])
+    setTask("")
+  }
+
+  const saveTask = (e) => {
+    e.preventDefault()
+    if (!validForm()) {
+      return
+    }
+
+    setTasks(tasks.map(x => x.id === id ? { id, name: task } : x))
+
+    //setTasks([...tasks, newTask])
+    seEditMode(false)
+    setId("")
     setTask("")
   }
 
@@ -36,7 +69,7 @@ function App() {
           <h4 className="text-center">Task List</h4>
           {
             size(tasks) === 0 ? (
-              <h5 className="text-center">there are no scheduled tasks yet</h5>
+              <li className="list-group-item">there are no scheduled tasks yet</li>
             ) : (
                 <ul className="list-group">
                   {
@@ -50,6 +83,7 @@ function App() {
               </button>
                         <button
                           className="btn btn-warning btn-sm float-right"
+                          onClick={() => editTask(task)}
                         >Edit
               </button>
                       </li>))
@@ -58,18 +92,24 @@ function App() {
           }
         </div>
         <div className="col-4">
-          <h4 className="text-center">Form</h4>
-          <form onSubmit={addTask}>
+          <h4 className="text-center">
+            {editMode ? "Modify Task" : "Add Task"}
+          </h4>
+          <form onSubmit={editMode ? saveTask : addTask}>
+            {
+              error && <spam className="text-danger mb-2">{error}</spam>
+            }
             <input type="text"
               className="form-control mb-2"
               placeholder="Insert task..."
               onChange={(text) => setTask(text.target.value)}
               value={task}
             ></input>
+
             <button
-              className="btn btn-dark btn-block"
+              className={editMode ? "btn btn-warning btn-block" : "btn btn-dark btn-block"}
               type="submit">
-              Add
+              {editMode ? "Save" : "Add"}
             </button>
           </form>
         </div>
