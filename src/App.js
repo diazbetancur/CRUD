@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { isEmpty, size } from 'loadsh'
-import shortId from 'shortid'
+import {addDocument, getCollection, updateDocument, deleteDocument} from './actions'
 
 function App() {
   const [task, setTask] = useState("")
@@ -8,6 +8,15 @@ function App() {
   const [editMode, seEditMode] = useState(false)
   const [id, setId] = useState("")
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    ( async () => {
+      const result = await getCollection("task") 
+      if (result.statusResponse) {
+        setTasks(result.data)
+      }        
+    })()
+  }, [])
 
   const editTask = (theTask) => {
     setTask(theTask.name)
@@ -25,26 +34,37 @@ function App() {
     }
     return isValid
   }
-  const addTask = (e) => {
+  const addTask = async (e) => {
     e.preventDefault()
 
     if (!validForm()) {
       return
     }
 
-    const newTask =
+    const result = await addDocument("task", {name: task})
+
+    if(!result.statusResponse)
     {
-      id: shortId.generate(),
-      name: task
+      setError(result.error)
+      return
     }
 
-    setTasks([...tasks, newTask])
+    setTasks([...tasks, {id: result.data.id, name: task}])
     setTask("")
   }
 
-  const saveTask = (e) => {
+  const saveTask = async (e) => {
     e.preventDefault()
+
     if (!validForm()) {
+      return
+    }
+
+    const result = await updateDocument('task', id, {name: task})
+
+    if (!result.statusResponse)
+    {
+      setError(result.error)
       return
     }
 
@@ -56,7 +76,13 @@ function App() {
     setTask("")
   }
 
-  const deleteTask = (id) => {
+  const deleteTask = async (id) => {
+    const result = await deleteDocument('task', id)
+    
+    if(!result.statusResponse){
+      setError(result.error)
+      return
+    }
     setTasks(tasks.filter(x => x.id != id))
   }
 
